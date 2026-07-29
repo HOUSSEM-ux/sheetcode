@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>SheetCode — Révise avec Rami 🎒</title>
+  <meta name="description" content="Révise le Bac Tunisien avec la technique Feynman. Explique les concepts à Rami, ton camarade qui ne comprend rien, et décroche ton Bac!" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Noto+Sans+Arabic:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Space Grotesk', 'Noto Sans Arabic', 'sans-serif'],
+          },
+          colors: {
+            navy: { 950: '#0a0e1a', 900: '#0d1225', 800: '#111827' },
+            green: { electric: '#00ff94' },
+            purple: { electric: '#a855f7' },
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'ping-slow': 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    /* ─── Base ─── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Space Grotesk', 'Noto Sans Arabic', sans-serif;
+      background: linear-gradient(160deg, #0a0e1a 0%, #0d1225 60%, #0a0e1a 100%);
+      height: 100dvh;
+      overflow: hidden;
+      color: #fff;
+      /* BUG 1 FIX: Explicitly neutralise any inherited transform on the root
+         stacking context so Falkon cannot invert the flex column layout. */
+      transform: none !important;
+      writing-mode: horizontal-tb !important;
+    }
+
+    /* BUG 1 FIX: Prevent layout panels from ever receiving a transform that
+       would flip their stacking context. Only leaf/inline elements get transforms. */
+    #ai-panel, #student-panel {
+      transform: none !important;
+    }
+
+    /* ─── Scrollbar ─── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+    /* ─── Glass panel ─── */
+    .glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-strong {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    /* ─── Pulse ring for avatar ─── */
+    @keyframes pulseRing {
+      0% { transform: scale(1); opacity: 0.8; }
+      70% { transform: scale(1.35); opacity: 0; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+
+    @keyframes pulseRingOuter {
+      0% { transform: scale(1); opacity: 0.5; }
+      70% { transform: scale(1.6); opacity: 0; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .pulse-ring::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid #00ff94;
+      animation: pulseRing 2s ease-out infinite;
+    }
+
+    .pulse-ring::after {
+      content: '';
+      position: absolute;
+      inset: -14px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 255, 148, 0.4);
+      animation: pulseRingOuter 2s ease-out 0.4s infinite;
+    }
+
+    .pulse-ring-idle::before { border-color: rgba(0,255,148,0.3); }
+    .pulse-ring-idle::after { border-color: rgba(0,255,148,0.15); }
+
+    /* ─── Visualizer bars ─── */
+    #visualizer-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ─── Status badge ─── */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .blink { animation: blink 1.4s ease-in-out infinite; }
+
+    /* ─── Dialogue bubble ─── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.45s ease-out forwards; }
+
+    /* ─── Stage transitions ─── */
+    /* BUG 1 FIX: Removed translateY from stage-hidden. Applying a non-zero
+       translateY on a flex child creates a new stacking context which, in
+       Falkon's compositor, cascades into a 180° inversion of the parent
+       flex column. Opacity-only transition is safe and visually equivalent. */
+    .stage-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    .stage-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transition: opacity 0.4s ease;
+    }
+
+    /* ─── Select styling ─── */
+    select {
+      -webkit-appearance: none;
+      appearance: none;
+      cursor: pointer;
+    }
+
+    /* ─── Webcam mirror — scoped ONLY to the video element ─── */
+    #student-video {
+      transform: scaleX(-1); /* horizontal mirror only, intentional */
+      object-fit: cover;
+    }
+
+    /* ─── Text Mode (HTTP fallback) ─── */
+    #text-mode-panel {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      padding: 12px 16px 16px;
+      gap: 10px;
+    }
+    #text-mode-panel.active { display: flex; }
+
+    #text-history {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chat-bubble-student {
+      align-self: flex-end;
+      max-width: 82%;
+      background: rgba(168, 85, 247, 0.18);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: 16px 16px 4px 16px;
+      padding: 8px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.9);
+      word-break: break-word;
+    }
+
+    .chat-bubble-rami {
+      align-self: flex-start;
+      max-width: 82%;
+      background: rgba(0, 255, 148, 0.08);
+      border: 1px solid rgba(0, 255, 148, 0.18);
+      border-radius: 16px 16px 16px 4px;
+      padding: 8px 12px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: rgba(255,255,255,0.9);
+      word-break: break-word;
+    }
+
+    #text-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+
+    #student-text-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-size: 13px;
+      font-family: 'Space Grotesk', sans-serif;
+      color: #fff;
+      outline: none;
+      resize: none;
+      min-height: 40px;
+      max-height: 90px;
+      transition: border-color 0.2s;
+    }
+    #student-text-input::placeholder { color: rgba(255,255,255,0.3); }
+    #student-text-input:focus { border-color: rgba(168,85,247,0.5); }
+
+    #send-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s;
+      background: linear-gradient(135deg, #a855f7, #7c3aed);
+      flex-shrink: 0;
+    }
+    #send-btn:hover { transform: scale(1.1); }
+    #send-btn:active { transform: scale(0.92); }
+
+    .text-mode-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 600;
+      color: rgba(168,85,247,0.9);
+      background: rgba(168,85,247,0.12);
+      border: 1px solid rgba(168,85,247,0.25);
+      border-radius: 20px;
+      padding: 3px 9px;
+    }
+
+    /* ─── Trap badge tooltip ─── */
+    .trap-tooltip {
+      max-width: 260px;
+      width: max-content;
+    }
+
+    /* ─── Scrollable dialogue box ─── */
+    #dialogue-scroll {
+      max-height: 130px;
+      overflow-y: auto;
+    }
+
+    /* ─── Floating HUD ─── */
+    #hud {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 50;
+      pointer-events: none;
+    }
+    #hud > * { pointer-events: auto; }
+
+    /* ─── Call controls ─── */
+    .ctrl-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: transform 0.15s, background 0.15s;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+    .ctrl-btn:hover { transform: scale(1.1); }
+    .ctrl-btn:active { transform: scale(0.95); }
+
+    /* ─── Topic dropdown wrapper ─── */
+    .select-wrapper {
+      position: relative;
+    }
+    .select-wrapper::after {
+      content: '▾';
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.5);
+      pointer-events: none;
+      font-size: 12px;
+    }
+
+    /* ─── Barème side panel ─── */
+    #bareme-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 280px;
+      z-index: 60;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    #bareme-panel.open { transform: translateX(0); }
+
+    /* ─── Micro-shimmer for thinking state ─── */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .thinking-shimmer {
+      background: linear-gradient(90deg,
+        rgba(255,255,255,0.04) 25%,
+        rgba(0,255,148,0.08) 50%,
+        rgba(255,255,255,0.04) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 2s linear infinite;
+    }
+  </style>
+</head>
+
+<body class="relative flex flex-col" style="height:100dvh; overflow:hidden;">
+
+  <!-- ══════════════════════════════════════════════
+       TOP HALF — AI PERSONA PANEL (Rami)
+  ══════════════════════════════════════════════ -->
+  <section id="ai-panel"
+    class="relative flex flex-col items-center justify-between overflow-hidden"
+    style="height: 50dvh; min-height: 0;"
+  >
+    <!-- Background gradient blob -->
+    <div class="absolute inset-0 pointer-events-none" style="
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,255,148,0.07) 0%, transparent 70%);
+    "></div>
+
+    <!-- Top bar: app name + barème toggle -->
+    <div class="relative z-10 w-full flex items-center justify-between px-4 pt-3 pb-1">
+      <div class="flex items-center gap-2">
+        <span class="text-base font-bold tracking-tight" style="color:#00ff94;">SheetCode</span>
+        <span class="text-xs text-white/30">× Feynman Method</span>
+      </div>
+      <button id="bareme-toggle-btn"
+        class="glass rounded-full px-3 py-1 text-xs font-medium text-white/60 hover:text-white transition-colors"
+        onclick="toggleBareme()"
+        aria-label="Voir le barème">
+        📋 Barème
+      </button>
+    </div>
+
+    <!-- Main AI content area -->
+    <div class="relative z-10 flex flex-col items-center gap-3 px-4 w-full" style="flex:1; justify-content:center;">
+
+      <!-- Avatar + visualizer + rings -->
+      <div class="relative flex items-center justify-center" style="width:80px; height:80px;">
+        <!-- Pulse rings (conditionally active) -->
+        <div id="avatar-ring" class="absolute inset-0 rounded-full pulse-ring pulse-ring-idle"></div>
+        <!-- Avatar circle -->
+        <div class="relative z-10 rounded-full flex items-center justify-center text-3xl"
+          style="width:68px; height:68px; background: linear-gradient(135deg, #1a2a1a 0%, #0d1f0d 100%); border: 2px solid rgba(0,255,148,0.3);">
+          🎒
+        </div>
+      </div>
+
+      <!-- Name + status -->
+      <div class="flex flex-col items-center gap-1">
+        <span class="font-semibold text-sm text-white">Rami — Le Camarade Perdu</span>
+        <div id="status-badge" class="flex items-center gap-1.5 text-xs text-white/50">
+          <span class="w-1.5 h-1.5 rounded-full bg-white/30" id="status-dot"></span>
+          <span id="status-text">En attente...</span>
+        </div>
+      </div>
+
+      <!-- Audio Visualizer canvas -->
+      <div class="w-full glass rounded-xl overflow-hidden" style="height:44px; max-width: 320px;">
+        <canvas id="visualizer-canvas" width="320" height="44"></canvas>
+      </div>
+
+      <!-- Dialogue box — Stage 3+ only -->
+      <div id="dialogue-box" class="stage-hidden w-full max-w-sm">
+        <div id="dialogue-card" class="glass-strong rounded-2xl p-3 relative">
+          <!-- Trap warning badge -->
+          <div id="trap-badge" class="hidden absolute -top-3 right-3 z-20">
+            <div class="group relative">
+              <span class="glass rounded-full px-2 py-0.5 text-xs font-medium cursor-help"
+                style="color:#f59e0b; border-color: rgba(245,158,11,0.3);">
+                🚨 Trap
+              </span>
+              <!-- Tooltip -->
+              <div id="trap-tooltip-text"
+                class="trap-tooltip absolute bottom-full right-0 mb-2 glass-strong rounded-xl p-3 text-xs text-white/80 hidden group-hover:block"
+                style="border-color: rgba(245,158,11,0.25);">
+              </div>
+            </div>
+          </div>
+
+          <!-- Scrollable dialogue area -->
+          <div id="dialogue-scroll" class="text-sm leading-relaxed text-white/90">
+            <p id="dialogue-text" class="slide-up">...</p>
+          </div>
+
+          <!-- Thinking shimmer overlay -->
+          <div id="thinking-overlay"
+            class="thinking-shimmer absolute inset-0 rounded-2xl hidden"
+            style="z-index:5;">
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Topic / Subtopic picker — Stage 1–2 -->
+    <div id="topic-picker" class="stage-hidden relative z-10 w-full px-4 pb-3">
+      <div class="flex gap-2 w-full">
+        <!-- Subject picker -->
+        <div class="select-wrapper flex-1">
+          <select id="subject-select"
+            class="glass w-full rounded-xl px-3 py-2 text-xs font-medium text-white/80 bg-transparent focus:outline-none focus:ring-1 focus:ring-green-electric/40"
+            onchange="onSubjectChange()"
+            aria-label="Choisir la matière">
+            <option value="" disabled selected class="bg-navy-900">📚 Matière...</option>
+            <option value="maths" class="bg-navy-900">📐 Mathématiques</option>
+            <option value="physique" class="bg-navy-900">⚡ Physique</option>
+            <option value="chimie" class="bg-navy-900">🧪 Chimie</option>
+          </select>
+        </div>
+        <!-- Subtopic picker — Stage 2 -->
+        <div id="subtopic-wrapper" class="select-wrapper flex-1 stage-hidden">
+          <select id="subtopic-select"
+            class="glass w-full rounded-xl px-3 py-2 text-xs font-medium text-white/80 bg-transparent focus:outline-none focus:ring-1 focus:ring-green-electric/40"
+            onchange="onSubtopicChange()"
+            aria-label="Choisir le sous-sujet">
+            <option value="" disabled selected class="bg-navy-900">🎯 Sujet...</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Divider line -->
+  <div class="w-full h-px" style="background: linear-gradient(90deg, transparent, rgba(0,255,148,0.2), transparent);"></div>
+
+  <!-- ══════════════════════════════════════════════
+       BOTTOM HALF — STUDENT WEBCAM PANEL
+  ══════════════════════════════════════════════ -->
+  <section id="student-panel"
+    class="relative flex-1 overflow-hidden"
+    style="height: 50dvh; min-height: 0;"
+  >
+    <!-- Background gradient blob -->
+    <div class="absolute inset-0 pointer-events-none" style="
+      background: radial-gradient(ellipse 80% 60% at 50% 100%, rgba(168,85,247,0.05) 0%, transparent 70%);
+    "></div>
+
+    <!-- Webcam video (shown only when camera is granted) -->
+    <video id="student-video"
+      class="absolute inset-0 w-full h-full object-cover"
+      style="display:none;"
+      autoplay
+      muted
+      playsinline
+      aria-label="Webcam étudiant">
+    </video>
+
+    <!-- No-camera / idle overlay -->
+    <div id="no-camera-overlay"
+      class="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/40 text-sm glass">
+      <span class="text-3xl">📷</span>
+      <span>Appuyez sur <strong class="text-white/60">Start Call</strong> pour commencer</span>
+    </div>
+
+    <!-- TEXT MODE PANEL (BUG 2 & 3 FIX)
+         Replaces webcam when getUserMedia is unavailable (HTTP context / Falkon). -->
+    <div id="text-mode-panel" role="log" aria-live="polite" aria-label="Chat avec Rami">
+      <!-- Badge -->
+      <div class="flex items-center justify-between pt-1">
+        <span class="text-mode-badge">⌨️ Mode Texte</span>
+        <span class="text-xs text-white/30">Écris ta réponse ci-dessous</span>
+      </div>
+      <!-- Scrollable message history -->
+      <div id="text-history"></div>
+      <!-- Input row -->
+      <div id="text-input-row">
+        <textarea
+          id="student-text-input"
+          placeholder="Explique le concept à Rami... (Entrée pour envoyer)"
+          rows="1"
+          aria-label="Réponse étudiant"
+        ></textarea>
+        <button id="send-btn" onclick="sendTextReply()" aria-label="Envoyer">➤</button>
+      </div>
+    </div>
+
+    <!-- Student name tag -->
+    <div id="student-name-tag"
+      class="absolute bottom-20 left-4 glass rounded-xl px-3 py-1.5 flex items-center gap-2 stage-hidden">
+      <span class="w-2 h-2 rounded-full blink" style="background:#a855f7;"></span>
+      <span class="text-xs font-medium text-white/80">Toi 👩‍🎓</span>
+    </div>
+
+    <!-- Mic level meter (student) -->
+    <div id="mic-meter"
+      class="absolute bottom-20 right-4 stage-hidden flex items-end gap-0.5"
+      style="height:24px;">
+      <div id="mic-bar-1" class="w-1 rounded-full transition-all duration-100" style="height:4px; background:#a855f7;"></div>
+      <div id="mic-bar-2" class="w-1 rounded-full transition-all duration-100" style="height:4px; background:#a855f7;"></div>
+      <div id="mic-bar-3" class="w-1 rounded-full transition-all duration-100" style="height:4px; background:#a855f7;"></div>
+      <div id="mic-bar-4" class="w-1 rounded-full transition-all duration-100" style="height:4px; background:#a855f7;"></div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════
+       FLOATING HUD — Controls overlay
+  ══════════════════════════════════════════════ -->
+  <div id="hud" class="p-4">
+    <div class="flex items-center justify-center gap-4">
+
+      <!-- Start Call button — Stage 0 only -->
+      <button id="start-btn"
+        onclick="startCall()"
+        class="ctrl-btn px-6 w-auto rounded-full font-semibold text-sm"
+        style="background: linear-gradient(135deg, #00ff94, #00cc77); color: #0a0e1a; width:auto; height:40px; border-radius:20px;"
+        aria-label="Démarrer l'appel">
+        📞 Start Call
+      </button>
+
+      <!-- Call controls — Stage 1+ -->
+      <div id="call-controls" class="flex items-center gap-3 stage-hidden">
+        <!-- Mute toggle -->
+        <button id="mute-btn"
+          onclick="toggleMute()"
+          class="ctrl-btn glass text-lg"
+          aria-label="Couper le microphone"
+          aria-pressed="false">
+          🎙️
+        </button>
+
+        <!-- Next question -->
+        <button id="next-btn"
+          onclick="nextQuestion()"
+          class="ctrl-btn stage-hidden text-lg"
+          style="background: rgba(0,255,148,0.12); border: 1px solid rgba(0,255,148,0.2);"
+          aria-label="Question suivante">
+          ⏭️
+        </button>
+
+        <!-- End call -->
+        <button id="end-btn"
+          onclick="endCall()"
+          class="ctrl-btn text-lg"
+          style="background: rgba(239,68,68,0.2); border: 1px solid rgba(239,68,68,0.25);"
+          aria-label="Terminer l'appel">
+          📵
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       BARÈME SIDE PANEL
+  ══════════════════════════════════════════════ -->
+  <aside id="bareme-panel" class="glass-strong shadow-2xl">
+    <div class="flex flex-col h-full p-4 gap-4 overflow-y-auto">
+      <div class="flex items-center justify-between">
+        <span class="font-bold text-sm" style="color:#00ff94;">📋 Barème Officiel</span>
+        <button onclick="toggleBareme()" class="text-white/40 hover:text-white text-lg leading-none" aria-label="Fermer le barème">✕</button>
+      </div>
+      <div id="bareme-content" class="flex flex-col gap-2 text-xs text-white/70">
+        <p class="text-white/30 italic">Sélectionne un sujet pour voir le barème.</p>
+      </div>
+      <!-- Traps list -->
+      <div id="traps-section" class="hidden flex flex-col gap-2">
+        <div class="h-px w-full" style="background: rgba(255,255,255,0.08);"></div>
+        <span class="text-xs font-semibold text-white/50 uppercase tracking-wider">Pièges courants 🚨</span>
+        <div id="traps-content" class="flex flex-col gap-2 text-xs text-white/70"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ══════════════════════════════════════════════
+       CURRICULUM DATA + APP ENGINE
+  ══════════════════════════════════════════════ -->
+  <script src="curriculum_data.js"></script>
+  <script>
+    'use strict';
+
+    // ── State ──────────────────────────────────────────────────
+    const state = {
+      stage: 0,              // 0=idle, 1=connected, 2=topic, 3=active, 4=escalation
+      subject: null,
+      subtopic: null,
+      stream: null,
+      audioCtx: null,
+      analyserNode: null,
+      micStream: null,
+      isMuted: false,
+      studentTurns: 0,
+      baremeOpen: false,
+      vizAnimId: null,
+      micAnimId: null,
+    };
+
+    // ── DOM refs ──────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+
+    // ── Visualizer ────────────────────────────────────────────
+    const canvas  = $('visualizer-canvas');
+    const ctx2d   = canvas.getContext('2d');
+    let vizBars   = [];
+    const BAR_COUNT = 18;
+
+    function initBars() {
+      vizBars = Array.from({ length: BAR_COUNT }, () => ({
+        height: 4 + Math.random() * 20,
+        velocity: (Math.random() - 0.5) * 1.2,
+        phase: Math.random() * Math.PI * 2,
+      }));
+    }
+
+    function drawVisualizer(ts) {
+      const W = canvas.offsetWidth;
+      const H = canvas.offsetHeight;
+      canvas.width  = W * devicePixelRatio;
+      canvas.height = H * devicePixelRatio;
+      ctx2d.scale(devicePixelRatio, devicePixelRatio);
+
+      ctx2d.clearRect(0, 0, W, H);
+
+      const barW   = (W - (BAR_COUNT - 1) * 3) / BAR_COUNT;
+      const maxH   = H - 8;
+      const speed  = state.stage >= 3 ? 2.5 : 0.8;
+      const ampMod = state.stage >= 3 ? 1.6 : 1.0;
+
+      vizBars.forEach((bar, i) => {
+        bar.height += bar.velocity * speed + Math.sin((ts / 600) + bar.phase) * 0.4;
+        if (bar.height > maxH * 0.85 * ampMod) bar.velocity *= -0.7;
+        if (bar.height < 4)                     bar.velocity  = Math.abs(bar.velocity) * 0.8 + 0.3;
+
+        const x = i * (barW + 3);
+        const h = Math.max(4, Math.min(bar.height * ampMod, maxH));
+        const y = (H - h) / 2;
+
+        const alpha = 0.35 + (h / maxH) * 0.55;
+        ctx2d.fillStyle = `rgba(0, 255, 148, ${alpha})`;
+        const r = Math.min(barW / 2, 4);
+        ctx2d.beginPath();
+        ctx2d.roundRect(x, y, barW, h, r);
+        ctx2d.fill();
+      });
+
+      state.vizAnimId = requestAnimationFrame(drawVisualizer);
+    }
+
+    // ── Mic level bars ────────────────────────────────────────
+    function animateMicBars() {
+      let analyser = state.analyserNode;
+      if (!analyser) {
+        // Fake animation when no mic
+        const bars = [1,2,3,4].map(n => $(`mic-bar-${n}`));
+        bars.forEach(b => {
+          b.style.height = (4 + Math.random() * 14) + 'px';
+        });
+      } else {
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+        const avg = data.slice(0, 10).reduce((a, b) => a + b, 0) / 10;
+        const bars = [1,2,3,4].map(n => $(`mic-bar-${n}`));
+        bars.forEach((b, i) => {
+          const h = 4 + (avg / 255) * 20 * (0.5 + Math.random() * 0.5);
+          b.style.height = h + 'px';
+        });
+      }
+      state.micAnimId = requestAnimationFrame(animateMicBars);
+    }
+
+    // ── Status helpers ─────────────────────────────────────────
+    function setStatus(text, color = '#ffffff40', blink = false) {
+      $('status-text').textContent = text;
+      $('status-dot').style.background = color;
+      $('status-dot').style.animation = blink ? 'blink 1.4s ease-in-out infinite' : 'none';
+    }
+
+    // ── Stage transitions ──────────────────────────────────────
+    function show(el) {
+      el.classList.remove('stage-hidden');
+      el.classList.add('stage-visible');
+    }
+    function hide(el) {
+      el.classList.remove('stage-visible');
+      el.classList.add('stage-hidden');
+    }
+
+    // ── BUG 2 & 3 FIX: Detect media API availability BEFORE calling it ──────
+    // On plain HTTP (Falkon / non-secure context) navigator.mediaDevices is
+    // undefined. We check this synchronously so we never hit a TypeError and
+    // never surface a browser permission-denied alert to the user.
+
+    const mediaAvailable = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+    // ── Camera access (hardware path) ─────────────────────────
+    async function startCamera() {
+      if (!mediaAvailable) {
+        // Silently skip — text mode will be activated by startCall()
+        return false;
+      }
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: true,
+        });
+        state.stream = stream;
+        const video = $('student-video');
+        video.srcObject = stream;
+        video.style.display = 'block';
+        $('no-camera-overlay').style.display = 'none';
+
+        // Setup audio analyser for mic meter
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        state.audioCtx = audioCtx;
+        const src = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 64;
+        src.connect(analyser);
+        state.analyserNode = analyser;
+        return true;
+
+      } catch (err) {
+        // Permission denied or track error — fall through to text mode silently
+        console.info('SheetCode: camera unavailable, switching to text mode.', err.message);
+        return false;
+      }
+    }
+
+    // ── Activate text-input fallback mode ─────────────────────
+    function activateTextMode() {
+      state.textMode = true;
+      $('no-camera-overlay').style.display = 'none';
+      $('student-video').style.display = 'none';
+      $('text-mode-panel').classList.add('active');
+      // Update name tag label
+      const tag = $('student-name-tag');
+      if (tag) tag.querySelector('span:last-child').textContent = 'Toi ✍️';
+      // Auto-grow textarea
+      const ta = $('student-text-input');
+      ta.addEventListener('input', () => {
+        ta.style.height = 'auto';
+        ta.style.height = Math.min(ta.scrollHeight, 90) + 'px';
+      });
+      ta.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendTextReply();
+        }
+      });
+    }
+
+    // ── Student sends a text reply ─────────────────────────────
+    function sendTextReply() {
+      const ta = $('student-text-input');
+      const text = ta.value.trim();
+      if (!text || state.stage < 3) return;
+      ta.value = '';
+      ta.style.height = 'auto';
+
+      // Append student bubble
+      const history = $('text-history');
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble-student slide-up';
+      bubble.textContent = text;
+      history.appendChild(bubble);
+      history.scrollTop = history.scrollHeight;
+
+      // Count as a turn and fire next Rami question after delay
+      state.studentTurns++;
+      const useFollowup = state.studentTurns >= 2;
+      if (useFollowup) state.stage = 4;
+
+      setTimeout(() => {
+        showThinking(() => {
+          fireQuestion(useFollowup);
+          // Also echo Rami's question into text history so the chat log is unified
+          const prompt = getPrompt(state.subject, state.subtopic, useFollowup);
+          if (prompt) {
+            const ramiBubble = document.createElement('div');
+            ramiBubble.className = 'chat-bubble-rami slide-up';
+            ramiBubble.textContent = '🎒 ' + prompt.text;
+            history.appendChild(ramiBubble);
+            history.scrollTop = history.scrollHeight;
+          }
+        });
+      }, 800);
+    }
+
+    // ── Start call ─────────────────────────────────────────────
+    async function startCall() {
+      const cameraOk = await startCamera();
+
+      if (!cameraOk) {
+        // BUG 2 & 3 FIX: No hardware — switch entirely to text mode
+        activateTextMode();
+        setStatus('Mode Texte ⌨️', '#a855f7', false);
+      } else {
+        animateMicBars();
+        setStatus('Connecté 🟢', '#00ff94', true);
+      }
+
+      hide($('start-btn'));
+      show($('call-controls'));
+      show($('topic-picker'));
+      show($('student-name-tag'));
+      show($('mic-meter'));
+      setAvatarActive(true);
+      state.stage = 1;
+    }
+
+    // ── End call ───────────────────────────────────────────────
+    function endCall() {
+      if (state.stream) {
+        state.stream.getTracks().forEach(t => t.stop());
+        state.stream = null;
+      }
+      if (state.audioCtx) { state.audioCtx.close(); state.audioCtx = null; }
+      cancelAnimationFrame(state.micAnimId);
+
+      // Reset video / text mode panels
+      const video = $('student-video');
+      video.srcObject = null;
+      video.style.display = 'none';
+      $('no-camera-overlay').style.display = '';
+      $('text-mode-panel').classList.remove('active');
+      $('text-history').innerHTML = '';
+      const ta = $('student-text-input');
+      if (ta) { ta.value = ''; ta.style.height = 'auto'; }
+
+      hide($('call-controls'));
+      hide($('topic-picker'));
+      hide($('subtopic-wrapper'));
+      hide($('dialogue-box'));
+      hide($('student-name-tag'));
+      hide($('mic-meter'));
+      hide($('next-btn'));
+      show($('start-btn'));
+
+      setAvatarActive(false);
+      setStatus('En attente...', '#ffffff30', false);
+      $('subject-select').value = '';
+      $('subtopic-select').innerHTML = '<option value="" disabled selected class="bg-navy-900">🎯 Sujet...</option>';
+      $('dialogue-text').textContent = '...';
+      $('trap-badge').classList.add('hidden');
+      $('thinking-overlay').classList.add('hidden');
+      state.stage = 0;
+      state.subject = null;
+      state.subtopic = null;
+      state.studentTurns = 0;
+      state.textMode = false;
+    }
+
+    // ── Avatar ring mode ───────────────────────────────────────
+    function setAvatarActive(active) {
+      const ring = $('avatar-ring');
+      if (active) {
+        ring.classList.remove('pulse-ring-idle');
+      } else {
+        ring.classList.add('pulse-ring-idle');
+      }
+    }
+
+    // ── Mute toggle ────────────────────────────────────────────
+    function toggleMute() {
+      // In text mode there is no stream — gracefully no-op
+      if (!state.stream) return;
+      const audioTracks = state.stream.getAudioTracks();
+      state.isMuted = !state.isMuted;
+      audioTracks.forEach(t => t.enabled = !state.isMuted);
+      const btn = $('mute-btn');
+      btn.textContent = state.isMuted ? '🔇' : '🎙️';
+      btn.style.background = state.isMuted
+        ? 'rgba(239,68,68,0.2)'
+        : 'rgba(255,255,255,0.06)';
+      btn.setAttribute('aria-pressed', state.isMuted);
+    }
+
+    // ── Subject change ─────────────────────────────────────────
+    function onSubjectChange() {
+      const subject = $('subject-select').value;
+      if (!subject) return;
+      state.subject = subject;
+      state.subtopic = null;
+      state.studentTurns = 0;
+
+      // Populate subtopic dropdown
+      const sel = $('subtopic-select');
+      sel.innerHTML = '<option value="" disabled selected class="bg-navy-900">🎯 Sujet...</option>';
+      getSubtopics(subject).forEach(({ key, label, emoji }) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = `${emoji} ${label}`;
+        opt.className = 'bg-navy-900';
+        sel.appendChild(opt);
+      });
+      sel.value = '';
+
+      show($('subtopic-wrapper'));
+      hide($('dialogue-box'));
+      $('trap-badge').classList.add('hidden');
+      setStatus('Choisir un sujet...', '#f59e0b', false);
+      updateBareme();
+      state.stage = 2;
+    }
+
+    // ── Subtopic change ────────────────────────────────────────
+    function onSubtopicChange() {
+      const subtopic = $('subtopic-select').value;
+      if (!subtopic) return;
+      state.subtopic = subtopic;
+      state.studentTurns = 0;
+      state.stage = 3;
+      showThinking(() => fireQuestion(false));
+      show($('next-btn'));
+      updateBareme();
+    }
+
+    // ── Fire a Feynman question ────────────────────────────────
+    function fireQuestion(useFollowup) {
+      const prompt = getPrompt(state.subject, state.subtopic, useFollowup);
+      if (!prompt) return;
+
+      // Show dialogue box
+      show($('dialogue-box'));
+      $('thinking-overlay').classList.add('hidden');
+
+      // Animate text
+      const textEl = $('dialogue-text');
+      textEl.classList.remove('slide-up');
+      void textEl.offsetWidth; // reflow
+      textEl.textContent = prompt.text;
+      textEl.classList.add('slide-up');
+
+      // Trap badge
+      const badge = $('trap-badge');
+      if (prompt.hasTrap && prompt.trapHint) {
+        badge.classList.remove('hidden');
+        $('trap-tooltip-text').textContent = prompt.trapHint;
+      } else {
+        badge.classList.add('hidden');
+      }
+
+      // Status
+      setStatus('Rami parle... 🗣️', '#00ff94', true);
+
+      // After 3s → waiting
+      setTimeout(() => {
+        if (state.stage >= 3) setStatus('En attente de ta réponse 👂', '#a855f7', false);
+      }, 3000);
+    }
+
+    // ── Thinking shimmer ───────────────────────────────────────
+    function showThinking(callback) {
+      show($('dialogue-box'));
+      $('thinking-overlay').classList.remove('hidden');
+      setStatus('Rami réfléchit... 🤔', '#f59e0b', true);
+      setTimeout(() => {
+        $('thinking-overlay').classList.add('hidden');
+        callback();
+      }, 1200 + Math.random() * 600);
+    }
+
+    // ── Next question ──────────────────────────────────────────
+    function nextQuestion() {
+      state.studentTurns++;
+      const useFollowup = state.studentTurns >= 2;
+      if (useFollowup) state.stage = 4;
+      showThinking(() => fireQuestion(useFollowup));
+    }
+
+    // ── Barème panel ───────────────────────────────────────────
+    function toggleBareme() {
+      state.baremeOpen = !state.baremeOpen;
+      const panel = $('bareme-panel');
+      state.baremeOpen ? panel.classList.add('open') : panel.classList.remove('open');
+    }
+
+    function updateBareme() {
+      const content = $('bareme-content');
+      const trapsSection = $('traps-section');
+      const trapsContent = $('traps-content');
+
+      if (!state.subject || !state.subtopic) {
+        content.innerHTML = '<p class="text-white/30 italic">Sélectionne un sujet pour voir le barème.</p>';
+        trapsSection.classList.add('hidden');
+        return;
+      }
+
+      const notes = getBaremeNotes(state.subject, state.subtopic);
+      const traps = getTraps(state.subject, state.subtopic);
+      const subtopicData = BAC_CURRICULUM[state.subject]?.subtopics?.[state.subtopic];
+
+      content.innerHTML = `
+        <div class="glass rounded-xl p-2.5 mb-1" style="border-color: rgba(0,255,148,0.15);">
+          <p class="text-xs font-semibold mb-2" style="color:#00ff94;">
+            ${subtopicData?.emoji || ''} ${subtopicData?.label || ''}
+          </p>
+          ${notes.map(n => `
+            <div class="flex gap-2 items-start mb-1.5">
+              <span class="mt-0.5 shrink-0" style="color:#00ff94;">✓</span>
+              <span>${n}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      if (traps.length > 0) {
+        trapsSection.classList.remove('hidden');
+        trapsContent.innerHTML = traps.map(t => `
+          <div class="glass rounded-xl p-2.5" style="border-color: rgba(245,158,11,0.2);">
+            <div class="flex gap-2 items-start">
+              <span class="shrink-0">🚨</span>
+              <span>${t.french}</span>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        trapsSection.classList.add('hidden');
+      }
+    }
+
+    // ── Keyboard shortcuts ─────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      // Don't intercept keys when user is typing in the text reply box
+      if (e.target && e.target.id === 'student-text-input') return;
+      if (e.key === 'Enter' && state.stage === 0)  startCall();
+      if (e.key === ' ' && state.stage >= 3 && !state.textMode) { e.preventDefault(); nextQuestion(); }
+      if (e.key === 'Escape' && state.baremeOpen)  toggleBareme();
+      if (e.key === 'm' && state.stage >= 1)       toggleMute();
+    });
+
+    // ── Init ───────────────────────────────────────────────────
+    initBars();
+    requestAnimationFrame(drawVisualizer);
+    setStatus('Appuyez sur Start Call', '#ffffff30', false);
+    // Log context info to help debugging in Falkon / HTTP environments
+    if (!mediaAvailable) {
+      console.info('SheetCode: running in non-secure context — text mode will activate on Start Call.');
+    }
+  </script>
+
+</body>
+</html>
