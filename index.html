@@ -47,7 +47,14 @@
     /* ONBOARDING */
     #onboarding-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#0a0e1a 0%,#0d1225 60%,#0a0e1a 100%);transition:opacity .5s ease}
     #onboarding-overlay.fade-out{opacity:0;pointer-events:none}
-    .ob-card{width:100%;max-width:440px;padding:40px 36px 32px;background:rgba(255,255,255,.05);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.12);border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,.6)}
+    .ob-card{width:100%;max-width:860px;display:flex;flex-direction:column;background:rgba(255,255,255,.05);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.12);border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,.6);overflow:hidden}
+    .ob-left, .ob-right{padding:40px 36px 32px;flex:1}
+    .ob-right{background:rgba(0,0,0,.15);border-top:1px solid rgba(255,255,255,.07)}
+    @media(min-width:800px){.ob-card{flex-direction:row}.ob-right{border-top:none;border-left:1px solid rgba(255,255,255,.07)}}
+    .ob-right-title{font-size:16px;font-weight:600;color:#fff;margin-bottom:16px}
+    .ob-right-list{list-style:none;padding:0;margin:0;font-size:13px;color:rgba(255,255,255,.7);line-height:1.6}
+    .ob-right-list li{margin-bottom:12px;position:relative;padding-left:24px}
+    .ob-right-list li::before{content:'•';position:absolute;left:0;color:#00ff94;font-size:18px;line-height:1}
     .ob-logo{font-size:22px;font-weight:700;color:#00ff94;margin-bottom:6px}
     .ob-card h1{font-size:17px;font-weight:600;color:#fff;margin:0 0 4px}
     .ob-subtitle{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:28px}
@@ -198,28 +205,40 @@
 <!-- ONBOARDING -->
 <div id="onboarding-overlay" role="dialog" aria-modal="true">
   <div class="ob-card">
-    <div class="ob-logo">🎒 SheetCode</div>
-    <h1>Bienvenue sur la Console Feynman</h1>
-    <p class="ob-subtitle">Révise le Bac Tunisien en expliquant les concepts à Rami — le camarade qui ne comprend jamais rien.</p>
+    <div class="ob-left">
+      <div class="ob-logo">🎒 SheetCode</div>
+      <h1>Bienvenue sur la Console Feynman</h1>
+      <p class="ob-subtitle">Révise le Bac Tunisien en expliquant les concepts à Rami — le camarade qui ne comprend jamais rien.</p>
 
-    <div class="form-group">
-      <label class="form-label" for="ob-name">Ton prénom <span style="color:#ef4444;">*</span></label>
-      <input type="text" id="ob-name" class="form-input" placeholder="Ahmed, Sarra, Youssef..."
-        maxlength="32" autocomplete="given-name"
-        oninput="validateOB()"
-        onkeydown="if(event.key==='Enter')completeOB()" />
+      <div class="form-group">
+        <label class="form-label" for="ob-name">Ton prénom <span style="color:#ef4444;">*</span></label>
+        <input type="text" id="ob-name" class="form-input" placeholder="Ahmed, Sarra, Youssef..."
+          maxlength="32" autocomplete="given-name"
+          oninput="validateOB()"
+          onkeydown="if(event.key==='Enter')completeOB()" />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="ob-key">Clé Gemini API <span class="opt">(optionnel — pour analyser les cahiers)</span></label>
+        <input type="password" id="ob-key" class="form-input" placeholder="AIzaSy..." autocomplete="off" />
+        <p class="form-hint">Extrait le texte manuscrit de tes images et génère des questions personnalisées.
+          Clé gratuite sur <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a>.</p>
+      </div>
+
+      <button id="begin-btn" class="start-btn" onclick="completeOB()" disabled>Commencer la session →</button>
+
+      <div class="ob-footer">Created by <strong style="color:rgba(255,255,255,.38);">Houssem Soudeni</strong> &nbsp;·&nbsp; SheetCode v2.0 — Bac Tunisien 2026</div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label" for="ob-key">Clé Gemini API <span class="opt">(optionnel — pour analyser les cahiers)</span></label>
-      <input type="password" id="ob-key" class="form-input" placeholder="AIzaSy..." autocomplete="off" />
-      <p class="form-hint">Extrait le texte manuscrit de tes images et génère des questions personnalisées.
-        Clé gratuite sur <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a>.</p>
+    <div class="ob-right">
+      <h2 class="ob-right-title">Comment obtenir votre clé gratuite ?</h2>
+      <ul class="ob-right-list">
+        <li>Step 1: Cliquez sur le lien Google AI Studio ci-dessous.</li>
+        <li>Step 2: Connectez-vous avec votre compte Gmail.</li>
+        <li>Step 3: Cliquez sur 'Get API Key' puis copiez la clé générée (commençant par AIzaSy).</li>
+        <li>Step 4: Collez-la dans la case à gauche et commencez !</li>
+      </ul>
     </div>
-
-    <button id="begin-btn" class="start-btn" onclick="completeOB()" disabled>Commencer la session →</button>
-
-    <div class="ob-footer">Created by <strong style="color:rgba(255,255,255,.38);">Houssem Soudeni</strong> &nbsp;·&nbsp; SheetCode v2.0 — Bac Tunisien 2026</div>
   </div>
 </div>
 
