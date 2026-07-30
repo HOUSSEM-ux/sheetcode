@@ -288,26 +288,6 @@
         </div>
       </div>
 
-      <div id="topic-picker" class="pickers-wrap stage-hidden">
-        <div class="sel-wrap">
-          <select id="subject-select" onchange="onSubjectChange()" aria-label="Matière">
-            <option value="" disabled selected>📚 Matière...</option>
-            <option value="maths">📐 Mathématiques</option>
-            <option value="physique">⚡ Physique</option>
-            <option value="chimie">🧪 Chimie</option>
-            <option value="geographie">🗺️ Géographie</option>
-            <option value="histoire">📜 Histoire</option>
-            <option value="philosophie">🧠 Philosophie</option>
-            <option value="svt">🧬 SVT</option>
-          </select>
-        </div>
-        <div id="subtopic-wrapper" class="sel-wrap stage-hidden">
-          <select id="subtopic-select" onchange="onSubtopicChange()" aria-label="Sous-sujet">
-            <option value="" disabled selected>🎯 Sujet...</option>
-          </select>
-        </div>
-      </div>
-
       <div class="actions-wrap">
         <button id="start-btn" onclick="startCall()">🟢 Démarrer la session</button>
         <div id="call-controls" class="stage-hidden" style="display:contents;">
@@ -337,10 +317,10 @@
           ondragleave="onDragLeave()"
           ondrop="onDrop(event)"
           role="button" tabindex="0" aria-label="Zone de dépôt">
-          <input type="file" id="file-input" accept="image/*,.pdf" onchange="handleFile(this.files[0])" />
+          <input type="file" id="file-input" accept="image/*,.pdf" capture="environment" onchange="handleFile(this.files[0])" />
           <div class="dz-idle" id="dz-idle">
             <div class="dz-idle-icon">📷</div>
-            <div class="dz-idle-text">Dépose une photo de ton cahier ici, ou <strong onclick="$('file-input').click()">parcourir</strong></div>
+            <div class="dz-idle-text">Dépose une photo de ton cahier ici, <strong onclick="$('file-input').click()">prendre une photo</strong> ou parcourir</div>
             <div class="dz-idle-hint">JPG · PNG · PDF — Rami analysera ton écriture et génèrera ses questions</div>
           </div>
           <div class="dz-prev" id="dz-prev">
@@ -628,12 +608,20 @@ function clearUpload(){
 
 // CALL LIFECYCLE
 async function startCall(){
+  if(state.customPrompts.length === 0){
+    alert("Veuillez d'abord uploader ou prendre une photo de votre cours.");
+    return;
+  }
   const ok=await startCamera();
   if(!ok){activateTextMode();setStatus('Mode Texte ⌨️','#a855f7',false)}
   else{animateMicBars();setStatus('Connecté 🟢','#00ff94',true)}
-  hide($('start-btn'));show($('call-controls'));show($('topic-picker'));
-  show($('snt-tag'));show($('mic-meter'));setAvatarActive(true);state.stage=1;
+  hide($('start-btn'));show($('call-controls'));
+  show($('snt-tag'));show($('mic-meter'));setAvatarActive(true);
   $('tb-badge').style.display='none';
+
+  // Directly advance stage to start questions
+  state.stage=3;
+  showThinking(()=>fireQuestion(false));show($('next-btn'));
 }
 
 function endCall(){
@@ -643,10 +631,9 @@ function endCall(){
   const vid=$('student-video');vid.srcObject=null;vid.style.display='none';
   $('no-cam').style.display='';$('text-panel').classList.remove('active');
   $('text-history').innerHTML='';const ta=$('sti');if(ta){ta.value='';ta.style.height='auto'}
-  hide($('call-controls'));hide($('topic-picker'));hide($('subtopic-wrapper'));
+  hide($('call-controls'));
   hide($('dialogue-box'));hide($('snt-tag'));hide($('mic-meter'));hide($('next-btn'));
   show($('start-btn'));setAvatarActive(false);setStatus('En attente...','rgba(255,255,255,.3)',false);
-  $('subject-select').value='';$('subtopic-select').innerHTML='<option value="" disabled selected>🎯 Sujet...</option>';
   $('dialogue-text').textContent='...';$('trap-badge').style.display='none';$('thinking-overlay').style.display='none';
   $('tb-badge').style.display='none';
   state.stage=0;state.subject=null;state.subtopic=null;state.studentTurns=0;state.textMode=false;state.analyserNode=null;
@@ -660,28 +647,10 @@ function toggleMute(){
   btn.setAttribute('aria-pressed',state.isMuted);
 }
 
-// SUBJECTS
-function onSubjectChange(){
-  const sub=$('subject-select').value;if(!sub)return;
-  state.subject=sub;state.subtopic=null;state.studentTurns=0;
-  const sel=$('subtopic-select');sel.innerHTML='<option value="" disabled selected>🎯 Sujet...</option>';
-  getSubtopics(sub).forEach(({key,label,emoji})=>{const o=document.createElement('option');o.value=key;o.textContent=`${emoji} ${label}`;sel.appendChild(o)});
-  sel.value='';show($('subtopic-wrapper'));hide($('dialogue-box'));$('trap-badge').style.display='none';
-  setStatus('Choisir un sous-sujet...','#f59e0b',false);
-  const sd=BAC_CURRICULUM[sub];if(sd){$('tb-badge').textContent=sd.emoji+' '+sd.label;$('tb-badge').style.display='inline-flex'}
-  updateBareme();state.stage=2;
-}
-
-function onSubtopicChange(){
-  const sub=$('subtopic-select').value;if(!sub)return;
-  state.subtopic=sub;state.studentTurns=0;state.stage=3;
-  showThinking(()=>fireQuestion(false));show($('next-btn'));updateBareme();
-}
-
 // QUESTIONS
 function getNextPrompt(useFollowup){
   if(state.customPrompts.length>0){const idx=state.customPromptIndex%state.customPrompts.length;state.customPromptIndex++;return state.customPrompts[idx]}
-  return getPrompt(state.subject,state.subtopic,useFollowup);
+  return null;
 }
 
 function fireQuestion(useFollowup){
