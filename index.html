@@ -48,13 +48,7 @@
     #onboarding-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#0a0e1a 0%,#0d1225 60%,#0a0e1a 100%);transition:opacity .5s ease}
     #onboarding-overlay.fade-out{opacity:0;pointer-events:none}
     .ob-card{width:100%;max-width:860px;display:flex;flex-direction:column;background:rgba(255,255,255,.05);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.12);border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,.6);overflow:hidden}
-    .ob-left, .ob-right{padding:40px 36px 32px;flex:1}
-    .ob-right{background:rgba(0,0,0,.15);border-top:1px solid rgba(255,255,255,.07)}
-    @media(min-width:800px){.ob-card{flex-direction:row}.ob-right{border-top:none;border-left:1px solid rgba(255,255,255,.07)}}
-    .ob-right-title{font-size:16px;font-weight:600;color:#fff;margin-bottom:16px}
-    .ob-right-list{list-style:none;padding:0;margin:0;font-size:13px;color:rgba(255,255,255,.7);line-height:1.6}
-    .ob-right-list li{margin-bottom:12px;position:relative;padding-left:24px}
-    .ob-right-list li::before{content:'•';position:absolute;left:0;color:#00ff94;font-size:18px;line-height:1}
+    /* ob-card is now single-column — no left/right split needed */
     .ob-logo{font-size:22px;font-weight:700;color:#00ff94;margin-bottom:6px}
     .ob-card h1{font-size:17px;font-weight:600;color:#fff;margin:0 0 4px}
     .ob-subtitle{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:28px}
@@ -156,11 +150,7 @@
     .dz-stat.err{color:#f87171}
     .dz-x{background:none;border:none;cursor:pointer;font-size:16px;color:rgba(255,255,255,.35);flex-shrink:0;padding:4px;transition:color .15s}
     .dz-x:hover{color:#fff}
-    #api-key-row{margin-top:8px;display:none}
-    #api-key-row.visible{display:block}
-    #api-inline{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:7px 10px;font-size:11px;color:rgba(255,255,255,.7);outline:none;font-family:'Space Grotesk',sans-serif}
-    #api-inline:focus{border-color:rgba(0,255,148,.3)}
-    #api-inline::placeholder{color:rgba(255,255,255,.2)}
+    /* api-key-row removed — key is now server-side only */
     #extracted-panel{display:none;margin-top:8px;padding:10px 12px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);border-radius:10px;font-size:10.5px;color:rgba(255,255,255,.45);max-height:70px;overflow-y:auto;line-height:1.6}
     #extracted-panel.visible{display:block}
 
@@ -218,30 +208,12 @@
           onkeydown="if(event.key==='Enter')completeOB()" />
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="ob-key">Clé Gemini API <span class="opt">(optionnel — pour analyser les cahiers)</span></label>
-        <input type="password" id="ob-key" class="form-input" placeholder="AIzaSy..." autocomplete="off" />
-        <p class="form-hint">Extrait le texte manuscrit de tes images et génère des questions personnalisées.
-          Clé gratuite sur <a href="https://aistudio.google.com" target="_blank">Google AI Studio</a>.</p>
-      </div>
-
       <button id="begin-btn" class="start-btn" onclick="completeOB()" disabled>Commencer la session →</button>
 
       <div class="ob-footer">
         Besoin d'aide ? Contactez le développeur : <strong style="color:rgba(0,255,148,.5);">+216 20 575 186</strong><br/>
         <span style="opacity:.55;">Created by Houssem Soudeni &nbsp;·&nbsp; SheetCode v2.0 — Bac Tunisien 2027</span>
       </div>
-    </div>
-
-    <div class="ob-right">
-      <h2 class="ob-right-title">Comment obtenir votre clé gratuite ?</h2>
-      <ul class="ob-right-list">
-        <li>Step 1: Cliquez sur le lien Google AI Studio ci-dessous.</li>
-        <li>Step 2: Connectez-vous avec votre compte Gmail.</li>
-        <li>Step 3: Cliquez sur 'Get API Key' puis copiez la clé générée (commençant par AIzaSy).</li>
-        <li>Step 4: Collez-la dans la case à gauche et commencez !</li>
-      </ul>
-    </div>
   </div>
 </div>
 
@@ -355,9 +327,7 @@
             <button class="dz-x" onclick="clearUpload()" aria-label="Supprimer">✕</button>
           </div>
         </div>
-        <div id="api-key-row">
-          <input type="password" id="api-inline" placeholder="🔑 Clé Gemini API pour analyser ce fichier (AIzaSy...)" />
-        </div>
+        <!-- api-key-row removed: key is now handled server-side -->
         <div id="extracted-panel"></div>
       </div>
 
@@ -431,9 +401,10 @@
 <script src="curriculum_data.js"></script>
 <script>
 'use strict';
-const GEMINI_URL=k=>`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`;
+// Backend endpoint — API key lives only on the server (process.env.GEMINI_API_KEY)
+const BACKEND_URL='/api/gemini';
 const $=id=>document.getElementById(id);
-const state={stage:0,userName:'',apiKey:'',subject:null,subtopic:null,stream:null,audioCtx:null,analyserNode:null,isMuted:false,studentTurns:0,baremeOpen:false,vizAnimId:null,micAnimId:null,textMode:false,uploadedFile:null,customPrompts:[],customPromptIndex:0,extractedText:''};
+const state={stage:0,userName:'',subject:null,subtopic:null,stream:null,audioCtx:null,analyserNode:null,isMuted:false,studentTurns:0,baremeOpen:false,vizAnimId:null,micAnimId:null,textMode:false,uploadedFile:null,customPrompts:[],customPromptIndex:0,extractedText:''};
 
 // VISUALIZER
 const canvas=$('visualizer-canvas'),ctx2d=canvas.getContext('2d');
@@ -480,10 +451,10 @@ function personalize(t){return t.replace(/{name}/g,state.userName||'kho')}
 function validateOB(){$('begin-btn').disabled=$('ob-name').value.trim().length<1}
 function completeOB(){
   const name=$('ob-name').value.trim();if(!name)return;
-  state.userName=name;state.apiKey=$('ob-key').value.trim();
+  state.userName=name;
   $('tb-name').textContent=name+' 👋';
   $('ctrl-name').textContent=name;
-  $('ft-ctx').textContent=state.apiKey?'Vision API: activée ✓':'Vision API: non configurée';
+  $('ft-ctx').textContent='Vision API: activée ✓'; // key is server-side
   const ov=$('onboarding-overlay');ov.classList.add('fade-out');
   setTimeout(()=>{ov.style.display='none'},500);
   $('app').classList.add('ready');$('app').style.display='grid';
@@ -541,21 +512,20 @@ function showPreview(file){
 function dzStat(t,cls){const el=$('dz-stat');el.textContent=t;el.className='dz-stat'+(cls?' '+cls:'')}
 function dzErr(msg){$('dropzone').classList.add('dz-err');setTimeout(()=>$('dropzone').classList.remove('dz-err'),2000);dzStat('⚠️ '+msg,'err')}
 
+// processFile — encodes image locally, then posts to our secure /api/gemini backend
 async function processFile(file){
-  const key=state.apiKey||$('api-inline').value.trim();
-  if(!key){$('api-key-row').classList.add('visible');dzStat('🔑 Clé API requise pour analyser ce fichier.','');$('viz-stat-label').textContent='';return}
-  $('api-key-row').classList.remove('visible');
   dzStat('⏳ Lecture en cours...','');$('viz-stat-label').textContent='⟳ Analyse IA';
   try{
     let base64,mimeType;
     if(file.type==='application/pdf'){({base64,mimeType}=await renderPDF(file))}
     else{({base64,mimeType}=await readImg(file))}
-    await callVision(base64,mimeType,key,file.name);
-  }catch(e){console.error('Vision:',e);dzStat('❌ Erreur: '+e.message,'err');$('viz-stat-label').textContent=''}
+    await callBackend(base64,mimeType,file.name);
+  }catch(e){
+    console.error('Vision:',e);
+    dzStat('❌ '+e.message,'err');
+    $('viz-stat-label').textContent='';
+  }
 }
-
-function applyApiKey(){const k=$('api-inline').value.trim();if(!k||!state.uploadedFile)return;state.apiKey=k;$('ft-ctx').textContent='Vision API: activée ✓';processFile(state.uploadedFile)}
-$('api-inline').addEventListener('keydown',e=>{if(e.key==='Enter')applyApiKey()});
 
 function readImg(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>{const d=e.target.result;res({base64:d.split(',')[1],mimeType:file.type})};r.onerror=rej;r.readAsDataURL(file)})}
 
@@ -577,30 +547,25 @@ async function renderPDF(file){
   return{base64:oc.toDataURL('image/jpeg',.9).split(',')[1],mimeType:'image/jpeg'};
 }
 
-async function callVision(base64,mimeType,key,fname){
-  const prompt=`Tu es un assistant pédagogique pour le Baccalauréat Tunisien. L'étudiant s'appelle ${state.userName}.
-
-Voici une image d'une page de cahier manuscrit.
-
-TÂCHE 1: Extrais intégralement le texte manuscrit visible (préserve la structure).
-TÂCHE 2: Génère exactement 5 questions pédagogiques dans le style "Rami" — un étudiant tunisien perdu qui parle en code-switching (Derja tunisien + termes scientifiques français + slang anglais). Les questions doivent cibler les concepts clés et les pièges classiques du Bac.
-
-FORMAT OBLIGATOIRE:
-TEXTE_EXTRAIT:
-[texte extrait]
-
-QUESTIONS:
-Q1: [question 1]
-Q2: [question 2]
-Q3: [question 3]
-Q4: [question 4]
-Q5: [question 5]`;
-
-  const res=await fetch(GEMINI_URL(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt},{inline_data:{mime_type:mimeType,data:base64}}]}],generationConfig:{temperature:.75,maxOutputTokens:1200}})});
-  if(!res.ok){const e=await res.json().catch(()=>({error:{message:'Erreur réseau'}}));throw new Error(e.error?.message||`HTTP ${res.status}`)}
-  const data=await res.json();
-  const raw=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  parseVision(raw,fname);
+// callBackend — POSTs to /api/gemini (Vercel serverless) instead of calling Google directly
+async function callBackend(base64,mimeType,fname){
+  let res;
+  try{
+    res=await fetch(BACKEND_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type:'vision',base64,mimeType,userName:state.userName}),
+    });
+  }catch(netErr){
+    throw new Error('Pas de connexion au serveur — vérifie ta connexion.');
+  }
+  if(!res.ok){
+    const body=await res.json().catch(()=>({}));
+    throw new Error(body.error||`Erreur serveur (HTTP ${res.status})`);
+  }
+  const{text}=await res.json();
+  if(!text)throw new Error('Réponse vide du serveur.');
+  parseVision(text,fname);
 }
 
 function parseVision(raw,fname){
@@ -622,7 +587,6 @@ function clearUpload(){
   $('dz-idle').style.display='flex';$('dz-prev').classList.remove('active');
   $('dropzone').classList.remove('has-file','dz-err');
   $('dz-thumb').src='';$('dz-fname').textContent='';
-  $('api-key-row').classList.remove('visible');
   $('extracted-panel').classList.remove('visible');$('extracted-panel').textContent='';
   $('viz-stat-label').textContent='';$('notebook-badge').classList.remove('visible');
   $('dialogue-card').classList.remove('nb-active');$('file-input').value='';
