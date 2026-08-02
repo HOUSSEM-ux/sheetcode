@@ -49,6 +49,7 @@
     #onboarding-overlay.fade-out{opacity:0;pointer-events:none}
     .ob-card{width:100%;max-width:860px;display:flex;flex-direction:column;background:rgba(255,255,255,.05);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.12);border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,.6);overflow:hidden}
     /* ob-card is now single-column — no left/right split needed */
+    .ob-left{padding:40px 36px 32px;}
     .ob-logo{font-size:22px;font-weight:700;color:#00ff94;margin-bottom:6px}
     .ob-card h1{font-size:17px;font-weight:600;color:#fff;margin:0 0 4px}
     .ob-subtitle{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:28px}
@@ -213,8 +214,9 @@
       <div class="ob-footer">
         Besoin d'aide ? Contactez le développeur : <strong style="color:rgba(0,255,148,.5);">+216 20 575 186</strong><br/>
         <span style="opacity:.55;">Created by Houssem Soudeni &nbsp;·&nbsp; SheetCode v2.0 — Bac Tunisien 2027</span>
-      </div>
-  </div>
+       </div>
+     </div>
+   </div>
 </div>
 
 <!-- MAIN APP -->
@@ -454,10 +456,15 @@ function completeOB(){
   state.userName=name;
   $('tb-name').textContent=name+' 👋';
   $('ctrl-name').textContent=name;
-  $('ft-ctx').textContent='Vision API: activée ✓'; // key is server-side
-  const ov=$('onboarding-overlay');ov.classList.add('fade-out');
-  setTimeout(()=>{ov.style.display='none'},500);
-  $('app').classList.add('ready');$('app').style.display='grid';
+  $('ft-ctx').textContent='Vision: prête ✓';
+  // Show the app FIRST so there is no blank frame
+  const appEl=$('app');
+  appEl.classList.add('ready');
+  appEl.style.cssText='display:grid!important';
+  // Then fade out and fully remove the overlay
+  const ov=$('onboarding-overlay');
+  ov.classList.add('fade-out');
+  setTimeout(()=>{ ov.remove(); },520);
 }
 
 // MEDIA
