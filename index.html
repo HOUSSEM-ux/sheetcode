@@ -48,8 +48,10 @@
     #onboarding-overlay{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#0a0e1a 0%,#0d1225 60%,#0a0e1a 100%);transition:opacity .5s ease}
     #onboarding-overlay.fade-out{opacity:0;pointer-events:none}
     .ob-card{width:100%;max-width:860px;display:flex;flex-direction:column;background:rgba(255,255,255,.05);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);border:1px solid rgba(255,255,255,.12);border-radius:24px;box-shadow:0 40px 80px rgba(0,0,0,.6);overflow:hidden}
-    /* ob-card is now single-column — no left/right split needed */
+    /* ob-card — two-column on desktop */
     .ob-left{padding:40px 36px 32px;}
+    .ob-right-panel{flex:1;padding:36px 32px 32px;background:rgba(0,0,0,.18);border-top:1px solid rgba(255,255,255,.07)}
+    @media(min-width:820px){.ob-card{flex-direction:row;max-width:960px}.ob-right-panel{border-top:none;border-left:1px solid rgba(255,255,255,.07)}}
     .ob-logo{font-size:22px;font-weight:700;color:#00ff94;margin-bottom:6px}
     .ob-card h1{font-size:17px;font-weight:600;color:#fff;margin:0 0 4px}
     .ob-subtitle{font-size:12px;color:rgba(255,255,255,.4);margin-bottom:28px}
@@ -66,6 +68,29 @@
     .start-btn:active{transform:scale(.98)}
     .start-btn:disabled{opacity:.4;cursor:not-allowed}
     .ob-footer{margin-top:24px;padding-top:16px;border-top:1px solid rgba(255,255,255,.07);font-size:10px;color:rgba(255,255,255,.2);text-align:center}
+    /* API KEY STEPS */
+    .how-title{font-size:13px;font-weight:700;color:#fff;margin:0 0 16px;display:flex;align-items:center;gap:8px}
+    .key-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+    .key-step-num{width:24px;height:24px;border-radius:50%;background:rgba(0,255,148,.15);border:1px solid rgba(0,255,148,.35);color:#00ff94;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+    .key-step-text{font-size:12px;color:rgba(255,255,255,.65);line-height:1.55}
+    .key-step-text a{color:#00ff94;text-decoration:none;font-weight:600}
+    .key-step-text a:hover{text-decoration:underline}
+    .privacy-note{margin-top:18px;padding:10px 12px;background:rgba(0,255,148,.05);border:1px solid rgba(0,255,148,.15);border-radius:10px;font-size:10.5px;color:rgba(255,255,255,.4);line-height:1.55;display:flex;gap:8px;align-items:flex-start}
+    .privacy-note span{color:#00ff94;flex-shrink:0}
+    /* SETTINGS MODAL */
+    #settings-modal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);backdrop-filter:blur(8px);align-items:center;justify-content:center}
+    #settings-modal.open{display:flex}
+    .sm-card{background:rgba(13,18,37,.97);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:32px 28px;width:100%;max-width:440px;box-shadow:0 40px 80px rgba(0,0,0,.7)}
+    .sm-title{font-size:15px;font-weight:700;color:#fff;margin:0 0 4px}
+    .sm-sub{font-size:11px;color:rgba(255,255,255,.35);margin:0 0 20px}
+    .sm-row{display:flex;gap:8px;margin-top:10px}
+    .sm-save{flex:1;padding:10px;background:linear-gradient(135deg,#00ff94,#00cc77);border:none;border-radius:10px;font-size:13px;font-weight:700;color:#0a0e1a;cursor:pointer;font-family:'Space Grotesk',sans-serif}
+    .sm-close{padding:10px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:13px;color:rgba(255,255,255,.5);cursor:pointer;font-family:'Space Grotesk',sans-serif}
+    .sm-privacy{margin-top:14px;font-size:10px;color:rgba(255,255,255,.25);line-height:1.5}
+    /* TOPBAR KEY INDICATOR */
+    .tb-key-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);cursor:pointer;font-size:11px;color:rgba(255,255,255,.45);font-family:'Space Grotesk',sans-serif;transition:border-color .2s}
+    .tb-key-btn.has-key{border-color:rgba(0,255,148,.3);color:rgba(0,255,148,.7)}
+    .tb-key-btn:hover{border-color:rgba(0,255,148,.5)}
 
     /* APP SHELL */
     #app{display:none;height:100vh;grid-template-rows:52px 1fr 38px;overflow:hidden;transform:none!important}
@@ -209,14 +234,72 @@
           onkeydown="if(event.key==='Enter')completeOB()" />
       </div>
 
+      <div class="form-group">
+        <label class="form-label" for="ob-key">🔑 Clé Gemini API <span style="color:#ef4444;">*</span></label>
+        <input type="password" id="ob-key" class="form-input" placeholder="AIzaSy..."
+          autocomplete="off" oninput="validateOB()" />
+        <p class="form-hint">Gratuite — pas de carte bancaire requise.
+          Copie ta clé depuis <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio ↗</a></p>
+      </div>
+
       <button id="begin-btn" class="start-btn" onclick="completeOB()" disabled>Commencer la session →</button>
 
       <div class="ob-footer">
         Besoin d'aide ? Contactez le développeur : <strong style="color:rgba(0,255,148,.5);">+216 20 575 186</strong><br/>
         <span style="opacity:.55;">Created by Houssem Soudeni &nbsp;·&nbsp; SheetCode v2.0 — Bac Tunisien 2027</span>
-       </div>
-     </div>
-   </div>
+      </div>
+    </div>
+
+    <div class="ob-right-panel">
+      <p class="how-title">✨ Comment obtenir ta clé gratuite ?</p>
+
+      <div class="key-step">
+        <div class="key-step-num">1</div>
+        <div class="key-step-text">
+          Ouvre <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio ↗</a><br/>
+          (compte Gmail suffit — 100 % gratuit)
+        </div>
+      </div>
+      <div class="key-step">
+        <div class="key-step-num">2</div>
+        <div class="key-step-text">
+          Clique sur <strong style="color:#fff">« Créer une clé API »</strong> et copie la clé générée (commence par <code style="color:#00ff94;font-size:10px">AIzaSy</code>).
+        </div>
+      </div>
+      <div class="key-step">
+        <div class="key-step-num">3</div>
+        <div class="key-step-text">
+          Colle-la dans le champ « Clé Gemini API » à gauche et clique sur <strong style="color:#fff">Commencer la session</strong>.
+        </div>
+      </div>
+      <div class="key-step">
+        <div class="key-step-num">4</div>
+        <div class="key-step-text">
+          Uploade une photo de ton cahier — l'IA génère des questions personnalisées en quelques secondes !
+        </div>
+      </div>
+
+      <div class="privacy-note">
+        <span>🔒</span>
+        <span>Ta clé API est stockée uniquement dans <strong>ton navigateur</strong> (localStorage) et n’est <strong>jamais envoyée à nos serveurs</strong>. SheetCode l’utilise directement pour appeler l’API Google.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" role="dialog" aria-modal="true" onclick="if(event.target===this)closeSettings()">
+  <div class="sm-card">
+    <p class="sm-title">🔑 Mettre à jour la clé API</p>
+    <p class="sm-sub">Ta clé est stockée localement — jamais envoyée à nos serveurs.</p>
+    <label class="form-label" for="sm-key-input">Nouvelle clé Gemini</label>
+    <input type="password" id="sm-key-input" class="form-input" placeholder="AIzaSy..." autocomplete="off" />
+    <div class="sm-row">
+      <button class="sm-save" onclick="saveSettingsKey()">Enregistrer ✓</button>
+      <button class="sm-close" onclick="closeSettings()">Annuler</button>
+    </div>
+    <p class="sm-privacy">🔒 Stockée dans localStorage sous « user_gemini_key » — effacée si tu vides le cache.</p>
+  </div>
 </div>
 
 <!-- MAIN APP -->
@@ -234,6 +317,9 @@
       <span id="tb-badge"></span>
     </div>
     <div class="tb-actions">
+      <button id="tb-key-btn" class="tb-key-btn" onclick="openSettings()" title="Modifier la clé API">
+        <span>🔑</span><span id="tb-key-label">Clé API</span>
+      </button>
       <button class="tb-btn" onclick="toggleBareme()">📋 Barème</button>
     </div>
   </header>
@@ -403,10 +489,29 @@
 <script src="curriculum_data.js"></script>
 <script>
 'use strict';
-// Backend endpoint — API key lives only on the server (process.env.GEMINI_API_KEY)
-const BACKEND_URL='/api/gemini';
+// Direct Gemini REST endpoint — called from the browser using the user's own key
+const GEMINI_DIRECT_URL = model =>
+  `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
+const GEMINI_MODEL = 'gemini-2.0-flash';
 const $=id=>document.getElementById(id);
+
+// Load saved API key from localStorage on startup
+let _savedKey = localStorage.getItem('user_gemini_key') || '';
+
 const state={stage:0,userName:'',subject:null,subtopic:null,stream:null,audioCtx:null,analyserNode:null,isMuted:false,studentTurns:0,baremeOpen:false,vizAnimId:null,micAnimId:null,textMode:false,uploadedFile:null,customPrompts:[],customPromptIndex:0,extractedText:''};
+
+// Keep topbar key indicator in sync
+function syncKeyIndicator(){
+  const btn=$('tb-key-btn'),lbl=$('tb-key-label');
+  if(!btn)return;
+  if(_savedKey){
+    btn.classList.add('has-key');
+    lbl.textContent='Clé active ✓';
+  }else{
+    btn.classList.remove('has-key');
+    lbl.textContent='Clé API';
+  }
+}
 
 // VISUALIZER
 const canvas=$('visualizer-canvas'),ctx2d=canvas.getContext('2d');
@@ -450,18 +555,28 @@ function setAvatarActive(on){$('avatar-ring').classList.toggle('pulse-ring-idle'
 function personalize(t){return t.replace(/{name}/g,state.userName||'kho')}
 
 // ONBOARDING
-function validateOB(){$('begin-btn').disabled=$('ob-name').value.trim().length<1}
+function validateOB(){
+  const hasName=$('ob-name').value.trim().length>0;
+  const hasKey=$('ob-key').value.trim().length>5;
+  $('begin-btn').disabled=!(hasName&&hasKey);
+}
 function completeOB(){
-  const name=$('ob-name').value.trim();if(!name)return;
+  const name=$('ob-name').value.trim();
+  const key=$('ob-key').value.trim();
+  if(!name||!key)return;
+  // Persist key in localStorage
+  _savedKey=key;
+  localStorage.setItem('user_gemini_key',key);
   state.userName=name;
   $('tb-name').textContent=name+' 👋';
   $('ctrl-name').textContent=name;
   $('ft-ctx').textContent='Vision: prête ✓';
+  syncKeyIndicator();
   // Show the app FIRST so there is no blank frame
   const appEl=$('app');
   appEl.classList.add('ready');
   appEl.style.cssText='display:grid!important';
-  // Then fade out and fully remove the overlay
+  // Fade out and remove the overlay
   const ov=$('onboarding-overlay');
   ov.classList.add('fade-out');
   setTimeout(()=>{ ov.remove(); },520);
@@ -519,14 +634,20 @@ function showPreview(file){
 function dzStat(t,cls){const el=$('dz-stat');el.textContent=t;el.className='dz-stat'+(cls?' '+cls:'')}
 function dzErr(msg){$('dropzone').classList.add('dz-err');setTimeout(()=>$('dropzone').classList.remove('dz-err'),2000);dzStat('⚠️ '+msg,'err')}
 
-// processFile — encodes image locally, then posts to our secure /api/gemini backend
+// processFile — reads API key from localStorage, then calls Google directly
 async function processFile(file){
+  const apiKey=_savedKey||localStorage.getItem('user_gemini_key')||'';
+  if(!apiKey){
+    dzErr('Entre ta clé Gemini API d’abord (bouton 🔑 en haut à droite).');
+    openSettings();
+    return;
+  }
   dzStat('⏳ Lecture en cours...','');$('viz-stat-label').textContent='⟳ Analyse IA';
   try{
     let base64,mimeType;
     if(file.type==='application/pdf'){({base64,mimeType}=await renderPDF(file))}
     else{({base64,mimeType}=await readImg(file))}
-    await callBackend(base64,mimeType,file.name);
+    await callGeminiDirect(base64,mimeType,apiKey,file.name);
   }catch(e){
     console.error('Vision:',e);
     dzStat('❌ '+e.message,'err');
@@ -554,25 +675,56 @@ async function renderPDF(file){
   return{base64:oc.toDataURL('image/jpeg',.9).split(',')[1],mimeType:'image/jpeg'};
 }
 
-// callBackend — POSTs to /api/gemini (Vercel serverless) instead of calling Google directly
-async function callBackend(base64,mimeType,fname){
+// callGeminiDirect — calls Google's Gemini REST API directly from the browser
+async function callGeminiDirect(base64,mimeType,apiKey,fname){
+  const normMime=mimeType==='image/jpg'?'image/jpeg':mimeType;
+  const prompt=`Tu es un assistant pédagogique expert pour le Baccalauréat Tunisien 2027.
+L'étudiant s'appelle ${state.userName}.
+
+Voici une image d'une page de cahier manuscrit de ${state.userName}.
+
+TÂCHE 1: Extrais intégralement le texte manuscrit visible en préservant la structure.
+
+TÂCHE 2: Génère exactement 5 questions dans le style de "Rami" — un camarade tunisien perdu qui parle en code-switching (Derja + français scientifique + slang anglais). Cible les concepts clés et pièges du Bac.
+
+FORMAT OBLIGATOIRE:
+TEXTE_EXTRAIT:
+[texte extrait]
+
+QUESTIONS:
+Q1: [question]
+Q2: [question]
+Q3: [question]
+Q4: [question]
+Q5: [question]`;
+
   let res;
   try{
-    res=await fetch(BACKEND_URL,{
+    res=await fetch(`${GEMINI_DIRECT_URL(GEMINI_MODEL)}?key=${apiKey}`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type:'vision',base64,mimeType,userName:state.userName}),
+      body:JSON.stringify({
+        contents:[{parts:[{text:prompt},{inline_data:{mime_type:normMime,data:base64}}]}],
+        generationConfig:{temperature:.75,maxOutputTokens:1600},
+      }),
     });
   }catch(netErr){
-    throw new Error('Pas de connexion au serveur — vérifie ta connexion.');
+    throw new Error('Impossible de joindre l’API Google — vérifie ta connexion.');
   }
   if(!res.ok){
-    const body=await res.json().catch(()=>({}));
-    throw new Error(body.error||`Erreur serveur (HTTP ${res.status})`);
+    let body={};
+    try{body=await res.json();}catch(_){}
+    const msg=body?.error?.message||`HTTP ${res.status}`;
+    // 400 = invalid key format, 403 = key invalid/disabled
+    if(res.status===400||res.status===403){
+      throw new Error(`Clé API invalide ou désactivée (${res.status}). Vérifie-la sur Google AI Studio.`);
+    }
+    throw new Error(`Erreur Google API: ${msg}`);
   }
-  const{text}=await res.json();
-  if(!text)throw new Error('Réponse vide du serveur.');
-  parseVision(text,fname);
+  const data=await res.json();
+  const raw=data.candidates?.[0]?.content?.parts?.[0]?.text??'';
+  if(!raw)throw new Error('Réponse vide de l’API — réessaie avec une image plus nette.');
+  parseVision(raw,fname);
 }
 
 function parseVision(raw,fname){
@@ -704,12 +856,32 @@ function updateBareme(){
   else ts.style.display='none';
 }
 
+// SETTINGS MODAL
+function openSettings(){
+  const modal=$('settings-modal');
+  const inp=$('sm-key-input');
+  inp.value=_savedKey||'';
+  modal.classList.add('open');
+  setTimeout(()=>inp.focus(),50);
+}
+function closeSettings(){$('settings-modal').classList.remove('open')}
+function saveSettingsKey(){
+  const k=$('sm-key-input').value.trim();
+  if(!k){alert('Entre une clé API valide (commence par AIzaSy).');return;}
+  _savedKey=k;
+  localStorage.setItem('user_gemini_key',k);
+  syncKeyIndicator();
+  $('ft-ctx').textContent='Vision: prête ✓';
+  closeSettings();
+}
+
 // KEYBOARD
 document.addEventListener('keydown',e=>{
   if(e.target?.id==='sti')return;
   if(e.key==='Enter'&&state.stage===0)startCall();
   if(e.key===' '&&state.stage>=3&&!state.textMode){e.preventDefault();nextQuestion()}
   if(e.key==='Escape'&&state.baremeOpen)toggleBareme();
+  if(e.key==='Escape')closeSettings();
   if(e.key==='m'&&state.stage>=1)toggleMute();
 });
 
@@ -720,6 +892,10 @@ $('dropzone').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&
 initBars();
 requestAnimationFrame(drawVisualizer);
 if(!mediaAvailable)console.info('SheetCode: HTTP context — text mode will activate on Start Call.');
+// Restore API key state from localStorage
+syncKeyIndicator();
+// Pre-fill key in onboarding if already saved
+if(_savedKey){ const ki=$('ob-key'); if(ki)ki.value=_savedKey; validateOB(); }
 </script>
 </body>
 </html>
